@@ -157,55 +157,69 @@ import base64
 ############################################################################
 # For API coverage, this Anislbe module provides capability to operate on
 # all Kubernetes objects that support a "create" call (except for 'Events').
-# In order to obtain a valid list of Kubernetes objects, the v1 spec file
-# was referenced and the below python script was used to parse the JSON
-# spec file, extract only the objects with a description starting with
-# 'create a'. The script then iterates over all of these base objects
-# to get the endpoint URL and was used to generate the KIND_URL map.
+# In order to obtain a valid list of Kubernetes objects, the v1 and 
+# extensions/v1beta1 spec files were referenced and the below python script
+# was used to parse the JSON spec files, extract only the objects with a
+# nickname starting with 'create'. The script then iterates over all of
+# these base objects to get the endpoint URL and was used to generate the
+# KIND_URL map.
 #
 # import json
 # from urllib2 import urlopen
-#
-# r = urlopen("https://raw.githubusercontent.com/kubernetes"
-#            "/kubernetes/master/api/swagger-spec/v1.json")
-# v1 = json.load(r)
-#
-# apis = {}
-# for a in v1['apis']:
-#     p = a['path']
-#     for o in a['operations']:
-#         if o["summary"].startswith("create a") and o["type"] != "v1.Event":
-#             apis[o["type"]] = p
-#
-# def print_kind_url_map():
-#     results = []
-#     for a in apis.keys():
-#         results.append('"%s": "%s"' % (a[3:].lower(), apis[a]))
-#     results.sort()
-#     print "KIND_URL = {"
-#     print ",\n".join(results)
-#     print "}"
-#
-# if __name__ == '__main__':
-#     print_kind_url_map()
+# 
+# SWAGGER_SPECS = [
+#     'https://raw.githubusercontent.com/kubernetes/kubernetes/v1.3.6/api/swagger-spec/v1.json',
+#     'https://raw.githubusercontent.com/kubernetes/kubernetes/v1.3.6/api/swagger-spec/extensions_v1beta1.json',
+# ]
+# 
+# KIND_URL = {}
+# 
+# for swagger_spec in SWAGGER_SPECS:
+#     apis = json.load(urlopen(swagger_spec)).get('apis')
+# 
+#     for api in apis:
+#         for operation in api['operations']:
+#             if (operation['nickname'][:6] == 'create'
+#                     and operation['type'] != 'v1.Event'):
+#                 kind = operation['type'].rsplit('.', 1)[-1]
+#                 url = api['path']
+# 
+#                 KIND_URL[kind] = url
+# 
+# print('KIND_URL = {')
+# 
+# for kind, url in KIND_URL.items():
+#     print '    \'{0}\': \'{1}\','.format(kind.lower(), url)
+# 
+# print('}')
 ############################################################################
 ############################################################################
 
 KIND_URL = {
-    "binding": "/api/v1/namespaces/{namespace}/bindings",
-    "endpoints": "/api/v1/namespaces/{namespace}/endpoints",
-    "limitrange": "/api/v1/namespaces/{namespace}/limitranges",
-    "namespace": "/api/v1/namespaces",
-    "node": "/api/v1/nodes",
-    "persistentvolume": "/api/v1/persistentvolumes",
-    "persistentvolumeclaim": "/api/v1/namespaces/{namespace}/persistentvolumeclaims",  # NOQA
-    "pod": "/api/v1/namespaces/{namespace}/pods",
-    "podtemplate": "/api/v1/namespaces/{namespace}/podtemplates",
-    "replicationcontroller": "/api/v1/namespaces/{namespace}/replicationcontrollers",  # NOQA
-    "resourcequota": "/api/v1/namespaces/{namespace}/resourcequotas",
-    "secret": "/api/v1/namespaces/{namespace}/secrets",
-    "service": "/api/v1/namespaces/{namespace}/services",
-    "serviceaccount": "/api/v1/namespaces/{namespace}/serviceaccounts"
+    'configmap': '/api/v1/namespaces/{namespace}/configmaps',
+    'service': '/api/v1/namespaces/{namespace}/services',
+    'podtemplate': '/api/v1/namespaces/{namespace}/podtemplates',
+    'namespace': '/api/v1/namespaces',
+    'secret': '/api/v1/namespaces/{namespace}/secrets',
+    'daemonset': '/apis/extensions/v1beta1/namespaces/{namespace}/daemonsets',
+    'horizontalpodautoscaler': '/apis/extensions/v1beta1/namespaces/{namespace}/horizontalpodautoscalers',
+    'thirdpartyresource': '/apis/extensions/v1beta1/thirdpartyresources',
+    'node': '/api/v1/nodes',
+    'networkpolicy': '/apis/extensions/v1beta1/namespaces/{namespace}/networkpolicies',
+    'job': '/apis/extensions/v1beta1/namespaces/{namespace}/jobs',
+    'replicationcontroller': '/api/v1/namespaces/{namespace}/replicationcontrollers',
+    'limitrange': '/api/v1/namespaces/{namespace}/limitranges',
+    'deploymentrollback': '/apis/extensions/v1beta1/namespaces/{namespace}/deployments/{name}/rollback',
+    'deployment': '/apis/extensions/v1beta1/namespaces/{namespace}/deployments',
+    'resourcequota': '/api/v1/namespaces/{namespace}/resourcequotas',
+    'persistentvolumeclaim': '/api/v1/namespaces/{namespace}/persistentvolumeclaims',
+    'serviceaccount': '/api/v1/namespaces/{namespace}/serviceaccounts',
+    'persistentvolume': '/api/v1/persistentvolumes',
+    'endpoints': '/api/v1/namespaces/{namespace}/endpoints',
+    'ingress': '/apis/extensions/v1beta1/namespaces/{namespace}/ingresses',
+    'replicaset': '/apis/extensions/v1beta1/namespaces/{namespace}/replicasets',
+    'binding': '/api/v1/namespaces/{namespace}/pods/{name}/binding',
+    'pod': '/api/v1/namespaces/{namespace}/pods',
 }
 USER_AGENT = "ansible-k8s-module/0.0.1"
 
